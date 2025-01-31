@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List, Dict, Tuple
 from collections import Counter
 import torch
 
@@ -18,11 +18,17 @@ def read_sentiment_examples(infile: str) -> List[SentimentExample]:
     Returns:
         A list of SentimentExample objects parsed from the file.
     """
-    # TODO: Open the file, go line by line, separate sentence and label, tokenize the sentence and create SentimentExample object
     with open(infile, "r") as file:
-        lines = file.read().splitlines
-    bigrams = []
-    examples: List[SentimentExample] = None
+        lines: List[str] = file.read().splitlines()
+
+    examples: List[SentimentExample] = []
+
+    for full_line in lines:
+        line: List[str] = full_line.split("\t")
+        info: str = " ".join(line[:-1])
+        label: str = line[-1]
+        tokenized: List[str] = tokenize(info)
+        examples.append(SentimentExample(tokenized, int(label)))
     return examples
 
 
@@ -38,8 +44,12 @@ def build_vocab(examples: List[SentimentExample]) -> Dict[str, int]:
     Returns:
         Dict[str, int]: A dictionary representing the vocabulary, where each word is mapped to a unique index.
     """
-    # TODO: Count unique words in all the examples from the training set
-    vocab: Dict[str, int] = None
+    vocab: Dict[str, int] = {}
+
+    for example in examples:
+        for word in example._words:
+            if not word in vocab.keys():
+                vocab[word] = len(vocab.keys())
 
     return vocab
 
@@ -59,7 +69,14 @@ def bag_of_words(
     Returns:
         torch.Tensor: A tensor representing the bag-of-words vector.
     """
-    # TODO: Converts list of words into BoW, take into account the binary vs full
-    bow: torch.Tensor = None
+    bow: torch.Tensor = torch.zeros(len(vocab))
+
+    contador: Counter = Counter(text)
+    for word in contador.keys():
+        if word in vocab.keys():
+            bow[vocab[word]] = contador[word]
+
+    if binary:
+        bow[bow>0] = 1
 
     return bow
