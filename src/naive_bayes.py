@@ -66,6 +66,8 @@ class NaiveBayes:
 
         class_word_counts: Dict[int, torch.Tensor] = {}
         for label in labels:
+            # Para cada label (ejemplo), features[label] es un tensor con el numero de ocurrencias de cada palabra, y sumamos el delta
+            # para el smoothing. Dividimos entre el numero total de palabras en el feature
             class_word_counts[label.item()] = (features[label.item()]+delta) / (len(features[label.item()])+delta*self.vocab_size)
 
         return class_word_counts
@@ -88,7 +90,11 @@ class NaiveBayes:
                 "Model must be trained before estimating class posteriors."
             )
         # TODO: Calculate posterior based on priors and conditional probabilities of the words
-        log_posteriors: torch.Tensor = None
+        log_posteriors: torch.Tensor = torch.zeros(len(self.class_priors))
+        p_x = sum([self.conditional_probabilities[i]@feature * self.class_priors[i] for i in range(len(self.conditional_probabilities))])
+        for i in range(len(log_posteriors)):
+            log_posteriors[i] = torch.log(self.conditional_probabilities[i]@feature * self.class_priors[i] / p_x)
+        
         return log_posteriors
 
     def predict(self, feature: torch.Tensor) -> int:
@@ -108,7 +114,7 @@ class NaiveBayes:
             raise Exception("Model not trained. Please call the train method first.")
         
         # TODO: Calculate log posteriors and obtain the class of maximum likelihood 
-        pred: int = None
+        pred: int = torch.argmax(self.estimate_class_posteriors(feature)).item()
         return pred
 
     def predict_proba(self, feature: torch.Tensor) -> torch.Tensor:
@@ -128,5 +134,5 @@ class NaiveBayes:
             raise Exception("Model not trained. Please call the train method first.")
 
         # TODO: Calculate log posteriors and transform them to probabilities (softmax)
-        probs: torch.Tensor = None
+        probs: torch.Tensor = torch.softmax(self.estimate_class_posteriors(feature),0)
         return probs
