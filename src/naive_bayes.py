@@ -29,7 +29,7 @@ class NaiveBayes:
             delta (float): Smoothing parameter for Laplace smoothing.
         """
         self.class_priors = self.estimate_class_priors(labels)
-        self.vocab_size = labels.size()[0] # Shape of the probability tensors, useful for predictions and conditional probabilities
+        self.vocab_size = features.size()[-1] # Shape of the probability tensors, useful for predictions and conditional probabilities
         self.conditional_probabilities = self.estimate_conditional_probabilities(features, labels, delta)
         return
 
@@ -66,9 +66,10 @@ class NaiveBayes:
 
         class_word_counts: Dict[int, torch.Tensor] = {}
         for label in labels:
-            # Para cada label (ejemplo), features[label] es un tensor con el numero de ocurrencias de cada palabra, y sumamos el delta
-            # para el smoothing. Dividimos entre el numero total de palabras en el feature
-            class_word_counts[label.item()] = (features[label.item()]+delta) / (len(features[label.item()])+delta*self.vocab_size)
+            # Para cada label (etiqueta de cada ejemplo), features[label] es un tensor con el numero de ocurrencias de 
+            # cada palabra en ese ejemplo, y sumamos el delta para el smoothing.
+            # Dividimos entre el numero total de ejemplos y sumamos delta*vocab_size para el smoothing
+            class_word_counts[label.item()] = (features[label.item()]+delta) / (len(labels) +delta*self.vocab_size)
 
         return class_word_counts
 
