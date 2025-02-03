@@ -90,6 +90,9 @@ def evaluate_classification(predictions: torch.Tensor, labels: torch.Tensor) -> 
     Returns:
         dict: A dictionary containing the calculated metrics.
     """
-    metrics: Dict[str, float] = None
-
+    metrics: Dict[str, float] = {}
+    metrics["accuracy"] = sum((predictions==labels))/len(labels)
+    metrics["precision"] = sum((predictions==labels) & (predictions==1))/sum((predictions==1))
+    metrics["recall"] = sum((predictions==labels) & (labels==1))/sum(labels==1)
+    metrics["f1_score"] = (2 * metrics["precision"] * metrics["recall"])/(metrics["precision"] + metrics["recall"])
     return metrics
