@@ -18,7 +18,7 @@ def read_sentiment_examples(infile: str) -> List[SentimentExample]:
     Returns:
         A list of SentimentExample objects parsed from the file.
     """
-    with open(infile, "r") as file:
+    with open(infile, "r", encoding="utf-8") as file:
         lines: List[str] = file.read().splitlines()
 
     examples: List[SentimentExample] = []
@@ -27,8 +27,9 @@ def read_sentiment_examples(infile: str) -> List[SentimentExample]:
         line: List[str] = full_line.split("\t")
         info: str = " ".join(line[:-1])
         label: str = line[-1]
-        tokenized: List[str] = tokenize(info)
-        examples.append(SentimentExample(tokenized, int(label)))
+        if label.isdecimal():
+            tokenized: List[str] = tokenize(info)
+            examples.append(SentimentExample(tokenized, int(label)))
     return examples
 
 
