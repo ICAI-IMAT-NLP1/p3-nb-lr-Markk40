@@ -41,7 +41,7 @@ class LogisticRegression:
             loss = self.binary_cross_entropy_loss(predictions, labels)
             if epoch%10==0:
                 print(f"Epoch {epoch}/{epochs} loss: {loss}")
-            loss_gradient = (predictions-labels)@extended_features
+            loss_gradient = (predictions-labels)@extended_features / features.size()[0]
             self.weights -= learning_rate*loss_gradient
         # TODO: Implement gradient-descent algorithm to optimize logistic regression weights
         return
@@ -96,9 +96,9 @@ class LogisticRegression:
         """
         torch.manual_seed(random_state)
         
-        params: torch.Tensor = torch.zeros(dim+1)
+        # params: torch.Tensor = torch.zeros(size=(dim+1,))
         
-        return params
+        return torch.randn(dim + 1, dtype=torch.float32)
 
     @staticmethod
     def sigmoid(z: torch.Tensor) -> torch.Tensor:
