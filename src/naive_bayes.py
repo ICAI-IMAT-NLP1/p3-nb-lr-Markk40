@@ -44,12 +44,12 @@ class NaiveBayes:
             Dict[int, torch.Tensor]: A dictionary mapping class labels to their estimated prior probabilities.
         """
         class_priors: Dict[int, torch.Tensor] = {}
-        total_samples = labels.shape[0]  # Number of training examples
+        total_samples = labels.shape[0] 
 
         unique_classes, class_counts = torch.unique(labels, return_counts=True)
         
         for c, count in zip(unique_classes, class_counts):
-            class_priors[int(c)] = count / total_samples  # Correct probability formula
+            class_priors[int(c)] = count / total_samples 
 
         return class_priors
 
@@ -70,14 +70,13 @@ class NaiveBayes:
         unique_classes = torch.unique(labels)
         class_word_counts: Dict[int, torch.Tensor] = {}
 
-        vocab_size = features.shape[1]  # Assuming features.shape = (num_samples, vocab_size)
+        vocab_size = features.shape[1]
 
         for c in unique_classes:
-            class_mask = labels == c  # Select examples belonging to class c
-            word_counts = features[class_mask].sum(dim=0)  # Sum word occurrences for class c
-            total_words = word_counts.sum()  # Total words in class c
-
-            # Apply Laplace smoothing
+            class_mask = labels == c 
+            word_counts = features[class_mask].sum(dim=0) 
+            total_words = word_counts.sum()
+            
             class_word_counts[c.item()] = (word_counts + delta) / (total_words + delta * vocab_size)
 
         return class_word_counts
