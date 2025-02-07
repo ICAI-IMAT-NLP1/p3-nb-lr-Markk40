@@ -29,7 +29,7 @@ class NaiveBayes:
             delta (float): Smoothing parameter for Laplace smoothing.
         """
         self.class_priors = self.estimate_class_priors(labels)
-        self.vocab_size = features.size()[-1] # Shape of the probability tensors, useful for predictions and conditional probabilities
+        self.vocab_size = len(features[0]) # Shape of the probability tensors, useful for predictions and conditional probabilities
         self.conditional_probabilities = self.estimate_conditional_probabilities(features, labels, delta)
         return
 
@@ -44,9 +44,13 @@ class NaiveBayes:
             Dict[int, torch.Tensor]: A dictionary mapping class labels to their estimated prior probabilities.
         """
         class_priors: Dict[int, torch.Tensor] = {}
+        total_samples = labels.shape[0]  # Number of training examples
 
-        for label in labels:
-            class_priors[label.item()] = sum((labels==label))/len(labels)
+        unique_classes, class_counts = torch.unique(labels, return_counts=True)
+        
+        for c, count in zip(unique_classes, class_counts):
+            class_priors[int(c)] = count / total_samples  # Correct probability formula
+
         return class_priors
 
     def estimate_conditional_probabilities(
@@ -63,13 +67,18 @@ class NaiveBayes:
         Returns:
             Dict[int, torch.Tensor]: Conditional probabilities of each word for each class.
         """
-
+        unique_classes = torch.unique(labels)
         class_word_counts: Dict[int, torch.Tensor] = {}
-        for label in labels:
-            # Para cada label (etiqueta de cada ejemplo), features[label] es un tensor con el numero de ocurrencias de 
-            # cada palabra en ese ejemplo, y sumamos el delta para el smoothing.
-            # Dividimos entre el numero total de ejemplos y sumamos delta*vocab_size para el smoothing
-            class_word_counts[int(label.item())] = (features[int(label.item())]+delta) / (len(labels) +delta*self.vocab_size)
+
+        vocab_size = features.shape[1]  # Assuming features.shape = (num_samples, vocab_size)
+
+        for c in unique_classes:
+            class_mask = labels == c  # Select examples belonging to class c
+            word_counts = features[class_mask].sum(dim=0)  # Sum word occurrences for class c
+            total_words = word_counts.sum()  # Total words in class c
+
+            # Apply Laplace smoothing
+            class_word_counts[c.item()] = (word_counts + delta) / (total_words + delta * vocab_size)
 
         return class_word_counts
 
@@ -91,10 +100,15 @@ class NaiveBayes:
                 "Model must be trained before estimating class posteriors."
             )
         log_posteriors: torch.Tensor = torch.zeros(len(self.class_priors))
-        p_x = sum([self.conditional_probabilities[i]@feature * self.class_priors[i] for i in range(len(self.conditional_probabilities))])
-        for i in range(len(log_posteriors)):
-            log_posteriors[i] = torch.log(self.conditional_probabilities[i]@feature * self.class_priors[i] / p_x)
+        # p_x = sum([self.conditional_probabilities[i]@feature * self.class_priors[i] for i in range(len(self.class_priors))])
+        # for i in range(len(log_posteriors)):
+        #     log_posteriors[i] = torch.log(self.conditional_probabilities[i]@feature * self.class_priors[i] / p_x)
         
+        for label in self.class_priors.keys():
+            log_prior = torch.log(self.class_priors[label])
+            log_cond_prob = torch.sum(feature * torch.log(self.conditional_probabilities[label]))
+            log_posteriors[label] = log_prior + log_cond_prob
+
         return log_posteriors
 
     def predict(self, feature: torch.Tensor) -> int:
