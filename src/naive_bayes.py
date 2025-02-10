@@ -70,14 +70,10 @@ class NaiveBayes:
         unique_classes = torch.unique(labels)
         class_word_counts: Dict[int, torch.Tensor] = {}
 
-        vocab_size = features.shape[1]
-
         for c in unique_classes:
-            class_mask = labels == c 
-            word_counts = features[class_mask].sum(dim=0) 
-            total_words = word_counts.sum()
-            
-            class_word_counts[c.item()] = (word_counts + delta) / (total_words + delta * vocab_size)
+            word_counts: torch.Tensor = features[labels == c].sum(dim=0) 
+            total_words: int = word_counts.sum()
+            class_word_counts[c.item()] = (word_counts + delta) / (total_words + delta * self.vocab_size)
 
         return class_word_counts
 
@@ -99,13 +95,10 @@ class NaiveBayes:
                 "Model must be trained before estimating class posteriors."
             )
         log_posteriors: torch.Tensor = torch.zeros(len(self.class_priors))
-        # p_x = sum([self.conditional_probabilities[i]@feature * self.class_priors[i] for i in range(len(self.class_priors))])
-        # for i in range(len(log_posteriors)):
-        #     log_posteriors[i] = torch.log(self.conditional_probabilities[i]@feature * self.class_priors[i] / p_x)
         
         for label in self.class_priors.keys():
-            log_prior = torch.log(self.class_priors[label])
-            log_cond_prob = torch.sum(feature * torch.log(self.conditional_probabilities[label]))
+            log_prior: torch.Tensor = torch.log(self.class_priors[label])
+            log_cond_prob: torch.Tensor = torch.sum(feature * torch.log(self.conditional_probabilities[label]))
             log_posteriors[label] = log_prior + log_cond_prob
 
         return log_posteriors

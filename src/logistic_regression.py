@@ -32,16 +32,16 @@ class LogisticRegression:
         Returns:
             None: The function updates the model weights in place.
         """
-        self.weights = self.initialize_parameters(features.size()[1], self.random_state)
-        ones = torch.ones((features.size(0), 1))
-        extended_features = torch.cat([features, ones], dim=1)
+        self.weights: torch.Tensor = self.initialize_parameters(features.size()[1], self.random_state)
+        ones: torch.Tensor = torch.ones((features.size(0), 1))
+        extended_features: torch.Tensor = torch.cat([features, ones], dim=1)
 
         for epoch in range(1,epochs+1):
-            predictions = self.predict_proba(features)
-            loss = self.binary_cross_entropy_loss(predictions, labels)
+            predictions: torch.Tensor = self.predict_proba(features)
+            loss: torch.Tensor = self.binary_cross_entropy_loss(predictions, labels)
             if epoch%(epochs//10)==0:
                 print(f"Epoch {epoch}/{epochs} loss: {loss}")
-            loss_gradient = (predictions-labels)@extended_features / features.size()[0]
+            loss_gradient: torch.Tensor = (predictions-labels)@extended_features / features.size()[0]
             self.weights -= learning_rate*loss_gradient
         return
 
